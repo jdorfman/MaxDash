@@ -1,0 +1,4 @@
+{
+    "cpus" : "max",
+    "dbaddr" : "address:port"
+}
