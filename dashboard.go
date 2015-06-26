@@ -7,11 +7,13 @@ import (
 	"log"
 	"flag"
 	"time"
+	"strconv"
 	"strings"
 )
 
 var (
 	confFile = flag.String("config", "./config.json", "path to config file")
+	company = flag.Int("company", 4348, "company ID to look at")
 )
 
 func main() {
@@ -158,11 +160,11 @@ func main() {
 	}
 	draw := func(t int) {
 		tm := time.Now().UTC().Add(-3 * time.Hour)
-		urls := db.QueryUrls("SELECT * FROM urls WHERE company = 1738 AND time_window = '" + tm.Truncate(24*time.Hour).Format("2006-01-02 15:04:05") + "' ORDER BY hits DESC LIMIT 10")
+		urls := db.QueryUrls("SELECT * FROM urls WHERE company_id = " + strconv.Itoa(*company) + " AND time_window = '" + tm.Truncate(24*time.Hour).Format("2006-01-02 15:04:05") + "' ORDER BY hits DESC LIMIT 10")
 		for _, u := range urls {
 			data.PopUrl = append(data.PopUrl, u.Url)
 		}
-		rawlogs := db.QueryRawLogs("SELECT * FROM rawlogs WHERE company = 1738 AND ti = '" + tm.Format("2006-01-02 15:04:05") + "'")
+		rawlogs := db.QueryRawLogs("SELECT * FROM rawlogs WHERE ci = " + strconv.Itoa(*company) + " AND ti = '" + tm.Format("2006-01-02 15:04:05") + "'")
 		data.Hits = append(data.Hits, len(rawlogs))
 		data.Time = append(data.Time, tm.Format("2006-01-02 15:04:05"))
 		var cacheHits int
