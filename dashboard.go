@@ -1,18 +1,28 @@
-// Copyright 2015 Zack Guo <gizak@icloud.com>. All rights reserved.
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
-// +build ignore
-
 package main
 
-import ui "github.com/gizak/termui"
-import "math"
+import (
+	ui "github.com/gizak/termui"
 
-import "time"
+	"fmt"
+	"log"
+	"flag"
+	"math"
+	"time"
+)
+
+var (
+	confFile = flag.String("config", "./config.json", "path to config file")
+)
 
 func main() {
-	err := ui.Init()
+	flag.Parse()
+	config, err := getConfig(*confFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Config Loaded: ", config)
+
+	err = ui.Init()
 	if err != nil {
 		panic(err)
 	}
