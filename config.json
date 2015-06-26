@@ -1,3 +1,4 @@
 {
-    "cpus" : "max"
+    "cpus" : "max",
+    "dbaddr" : "thor-01-dal05.maxcdn.net:21212"
 }

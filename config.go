@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-    Cpus string     `json:"cpus"`
+    Cpus    string      `json:"cpus"`
+    DbAddr  string      `json:"dbaddr"`
 }
 
 func (c *Config) validate() bool {

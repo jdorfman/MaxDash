@@ -1,9 +1,9 @@
 package main
 
 import (
-	ui "github.com/gizak/termui"
+	ui 		"github.com/gizak/termui"
+	volt	"github.com/bmconklin/maxcdn_volt"
 
-	"fmt"
 	"log"
 	"flag"
 	"math"
@@ -19,8 +19,8 @@ func main() {
 	config, err := getConfig(*confFile)
 	if err != nil {
 		log.Fatal(err)
-	}
-	fmt.Println("Config Loaded: ", config)
+	}	
+	db := volt.Connect(config.DbAddr)
 
 	err = ui.Init()
 	if err != nil {
@@ -126,13 +126,41 @@ func main() {
 	p1.X = 52
 	p1.Y = 11
 
+	data := &struct{
+		Hits []int
+		Bytes []int64
+		Time []string
+		CacheHits []int
+		CachePerc []float64
+	} {
+		make([]int, 0),
+		make([]int64, 0),
+		make([]string, 0),
+		make([]int, 0),
+		make([]float64, 0),
+	}
 	draw := func(t int) {
-		g.Percent = t % 101
-		list.Items = strs[t%9:]
+		rawlogs := db.QueryUrls("SELECT * FROM urls WHERE ci = 1738 AND ti = '" + time.Now().UTC().Add(-10* time.Second).Format("2006-01-02 15:04:05") + "'")
+		data.Hits = append(data.Hits, len(rawlogs))
+		data.Time = append(data.Time, rawlogs[0].Ti.Format("2006-01-02 15:04:05"))
+		var cacheHits int
+		var bytes int64
+		for _, l := range rawlogs {
+			bytes += l.By_tr
+			if l.Es == "HIT" {
+				cacheHits++
+			}
+		}
+		data.CachePerc = append(data.CachePerc,float64(cacheHits)/float64(len(rawlogs)))
+		data.CacheHits = append(data.CacheHits,cacheHits)
+		data.Bytes = append(data.Bytes, bytes)
+
+		g.Percent = int(data.CachePerc[t] * float64(100))
+		list.Items = data.Time
 		sp.Lines[0].Data = spdata[:30+t%50]
 		sp.Lines[1].Data = spdata[:35+t%50]
 		lc.Data = sinps[t/2:]
-		lc1.Data = sinps[2*t:]
+		lc1.Data = data.CachePerc
 		bc.Data = bcdata[t/2%10:]
 		ui.Render(p, list, g, sp, lc, bc, lc1, p1)
 	}
