@@ -1,8 +1,11 @@
 # MaxDash
 Summer 2015 Hackathon
 
-# Install
+## Install
 `go get github.com/gizak/termui`
 
-# Run
-`go run dashboard.go`
+## Build
+`go build`
+
+## Build
+`./MaxDash`
