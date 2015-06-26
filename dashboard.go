@@ -6,8 +6,8 @@ import (
 
 	"log"
 	"flag"
-//	"math"
 	"time"
+	"strings"
 )
 
 var (
@@ -100,7 +100,7 @@ func main() {
 	g.Border.LabelFgColor = ui.ColorCyan
 
 	bc := ui.NewBarChart()
-	bcdata := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
+	//bcdata := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
 	bclabels := []string{"200", "206", "304", "403", "400", "500", "499"}
 	bc.Border.Label = " Status Codes "
 	bc.Width = 26
@@ -112,7 +112,7 @@ func main() {
 	bc.NumColor = ui.ColorBlack
 
 	bc2 := ui.NewBarChart()
-	bc2data := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
+	//bc2data := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
 	bc2labels := []string{"NA", "EU", "ASIA", "OC", "SA"}
 	bc2.Border.Label = " Hits Per Region "
 	bc2.Width = 23
@@ -139,37 +139,116 @@ func main() {
 		Time []string
 		CacheHits []int
 		CachePerc []float64
+		Status []int
+		Cont []int
+		Chrome []int
+		Safari []int
+		PopUrl []string
 	} {
 		make([]int, 0),
 		make([]int64, 0),
 		make([]string, 0),
 		make([]int, 0),
 		make([]float64, 0),
+		make([]int, 0),
+		make([]int, 0),
+		make([]int, 0),
+		make([]int, 0),
+		make([]string, 0),
 	}
 	draw := func(t int) {
-		rawlogs := db.QueryUrls("SELECT * FROM urls WHERE ci = 1738 AND ti = '" + time.Now().UTC().Add(-10* time.Second).Format("2006-01-02 15:04:05") + "'")
+		tm := time.Now().UTC().Add(-3 * time.Hour)
+		urls := db.QueryUrls("SELECT * FROM urls WHERE company = 1738 AND time_window = '" + tm.Truncate(24*time.Hour).Format("2006-01-02 15:04:05") + "' ORDER BY hits DESC LIMIT 10")
+		for _, u := range urls {
+			data.PopUrl = append(data.PopUrl, u.Url)
+		}
+		rawlogs := db.QueryRawLogs("SELECT * FROM rawlogs WHERE company = 1738 AND ti = '" + tm.Format("2006-01-02 15:04:05") + "'")
 		data.Hits = append(data.Hits, len(rawlogs))
-		data.Time = append(data.Time, rawlogs[0].Ti.Format("2006-01-02 15:04:05"))
+		data.Time = append(data.Time, tm.Format("2006-01-02 15:04:05"))
 		var cacheHits int
 		var bytes int64
+		var h200 int
+		var h206 int
+		var h304 int 
+		var h403 int 
+		var h400 int 
+		var h500 int
+		var h499 int
+
+		var na int
+		var eu int
+		var as int
+		var oc int
+		var sa int
+
+		var chrome int
+		var safari int
+
 		for _, l := range rawlogs {
 			bytes += l.By_tr
 			if l.Es == "HIT" {
 				cacheHits++
 			}
+			if l.Ss == 200 {
+				h200++
+			} else if l.Ss == 206 {
+				h206++
+			} else if l.Ss == 304 {
+				h304++
+			} else if l.Ss == 403 {
+				h403++
+			} else if l.Ss == 400{
+				h400++
+			} else if l.Ss == 500 {
+				h500++
+			} else if l.Ss == 499 {
+				h499++
+			}
+
+			if l.Co == "NA" {
+				na++
+			} else if l.Co == "SA" {
+				sa++
+			} else if l.Co == "EU" {
+				eu++
+			} else if l.Co == "AS" {
+				as++
+			} else if l.Co == "OC" {
+				oc++
+			}
+
+			if strings.Contains(l.Ua, "Chrome") {
+				chrome++
+			} else if strings.Contains(l.Ua, "Safari") {
+				safari++
+			}
 		}
 		data.CachePerc = append(data.CachePerc,float64(cacheHits)/float64(len(rawlogs)))
 		data.CacheHits = append(data.CacheHits,cacheHits)
 		data.Bytes = append(data.Bytes, bytes)
+		data.Status = append(data.Status, h200)
+		data.Status = append(data.Status, h206)
+		data.Status = append(data.Status, h304)
+		data.Status = append(data.Status, h400)
+		data.Status = append(data.Status, h403)
+		data.Status = append(data.Status, h500)
+		data.Status = append(data.Status, h499)
+
+		data.Cont = append(data.Cont, na)
+		data.Cont = append(data.Cont, eu)
+		data.Cont = append(data.Cont, as)
+		data.Cont = append(data.Cont, oc)
+		data.Cont = append(data.Cont, sa)
+
+		data.Chrome = append(data.Chrome, chrome)
+		data.Safari = append(data.Safari, safari)
 
 		g.Percent = int(data.CachePerc[t] * float64(100))
-		list.Items = data.Time
-		sp.Lines[0].Data = spdata[:30+t%50]
-		sp.Lines[1].Data = spdata[:35+t%50]
-		lc.Data = sinps[t/2:]
-		lc1.Data = data.CachePerc
-		bc.Data = bcdata[t/2%10:]
-		bc2.Data = bc2data[t/2%10:]
+		list.Items = data.PopUrl
+		sp.Lines[0].Data = data.Chrome
+		sp.Lines[1].Data = data.Safari
+		bc.Data = data.Status
+		bc2.Data = data.Cont
 		ui.Render(p, list, sp, bc, bc2)
 	}
 
