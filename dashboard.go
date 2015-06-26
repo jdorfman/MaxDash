@@ -111,7 +111,7 @@ func main() {
 		make([]string, 0),
 	}
 	draw := func(t int) {
-		tm := time.Now().UTC().Add(-3 * time.Hour)
+		tm := time.Now().UTC().Add(-10*time.Second)
 		urls := db.QueryUrls("SELECT * FROM urls WHERE company_id = " + strconv.Itoa(*company) + " AND time_window = '" + tm.Truncate(24*time.Hour).Format("2006-01-02 15:04:05") + "' ORDER BY hits DESC LIMIT 10")
 		for _, u := range urls {
 			data.PopUrl = append(data.PopUrl, u.Url)
