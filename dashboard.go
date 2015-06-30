@@ -12,7 +12,7 @@ import (
 
 var (
 	confFile = flag.String("config", "./config.json", "path to config file")
-	company = flag.Int("company", 4348, "company ID to look at")
+	company = flag.Int("company", 4348, "company ID to look at") // company id should be pulled from config.json
 )
 
 func main() {
@@ -29,44 +29,59 @@ func main() {
 	}
 	defer ui.Close()
 
+// Theme Chooser, future state: via config.json
+
+	//Colors
+	ui.UseTheme("helloworld")
+
+	//Use system default colors
+	//ui.UseTheme("default")
+
 // Start Dashboard
 
 	p := ui.NewPar("                    MaxCDN Dashboard - PRESS q TO QUIT ")
 	p.Height = 3
 	p.Width = 76
-	p.TextFgColor = ui.ColorWhite
-	p.Border.Label = ""
-	p.Border.FgColor = ui.ColorYellow
+	p.TextFgColor = ui.ColorCyan
+	p.Border.FgColor = ui.ColorWhite
+
+// Account Summary
+
+	par2 := ui.NewPar("Account: jdorfman\nZones: 5\n- - - - - - - - - - - -\nTransfered: 784.99 TB\n- - - - - - - - - - - -\nHits: 35,090,636,610\nMisses: 89,799,462\nPercentage: 99.74%")
+	par2.Height = 10
+	par2.Width = 25
+	par2.Y = 4
+	par2.Border.Label = " 24 Hour Summary "
+	par2.Border.FgColor = ui.ColorWhite
+	par2.Border.LabelFgColor = ui.ColorCyan
 
 // Popular Files List Chart
 
-	strs := []string{"bootstrap.min.js", "bootstrap.min.css", "font-awesome.min.css", "bootswatch-2.1.1.min.css", "font-awesome.3.1.4-min.css", "bootstrap-mobile.min.css", "bootstrap-all.css", "bootswatch-2.4.3.min.css"}
 	list := ui.NewList()
-	list.Items = strs
-	list.ItemFgColor = ui.ColorYellow
+	list.ItemFgColor = ui.ColorCyan
 	list.Border.Label = " Popular Files "
 	list.Height = 10
 	list.Width = 76
 	list.Y = 17
+	list.Border.LabelFgColor = ui.ColorCyan
 
 // Status Codes Bar Chart
 
 	bc := ui.NewBarChart()
-	//bcdata := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
-	bclabels := []string{"200", "206", "304", "403", "400", "500", "499"}
+	bclabels := []string{"200", "206", "304", "403", "400", "500", "499"} // Should be configurable
 	bc.Border.Label = " Status Codes "
 	bc.Width = 26
 	bc.Height = 10
 	bc.X = 26
 	bc.Y = 4
 	bc.DataLabels = bclabels
-	bc.BarColor = ui.ColorGreen
+	bc.BarColor = ui.ColorCyan
 	bc.NumColor = ui.ColorBlack
+	bc.Border.LabelFgColor = ui.ColorCyan
 
 // Hits Per Region Bar Chart
 
 	bc2 := ui.NewBarChart()
-	//bc2data := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
 	bc2labels := []string{"NA", "EU", "ASIA", "OC", "SA"}
 	bc2.Border.Label = " Hits Per Region "
 	bc2.Width = 23
@@ -74,8 +89,9 @@ func main() {
 	bc2.X = 53
 	bc2.Y = 4
 	bc2.DataLabels = bc2labels
-	bc2.BarColor = ui.ColorRed
+	bc2.BarColor = ui.ColorCyan
 	bc2.NumColor = ui.ColorBlack
+	bc2.Border.LabelFgColor = ui.ColorCyan
 
 // Cache Hit Percentage Gauge
 
@@ -85,9 +101,10 @@ func main() {
 	g2.Height = 3
 	g2.Y = 14
 	g2.Border.Label = " Cache Hit Percentage "
-	g2.BarColor = ui.ColorRed
+	g2.BarColor = ui.ColorCyan
 	g2.Border.FgColor = ui.ColorWhite
-	g2.Border.LabelFgColor = ui.ColorWhite
+	g2.Border.LabelFgColor = ui.ColorCyan
+	g2.PercentColor = ui.ColorBlack
 
 // Draw Funtion
 
@@ -111,8 +128,9 @@ func main() {
 		make([]string, 0),
 	}
 	draw := func(t int) {
-		tm := time.Now().UTC().Add(-10*time.Second)
-		urls := db.QueryUrls("SELECT * FROM urls WHERE company_id = " + strconv.Itoa(*company) + " AND time_window = '" + tm.Truncate(24*time.Hour).Format("2006-01-02 15:04:05") + "' ORDER BY hits DESC LIMIT 10")
+		//tm := time.Now().UTC().Add(-10*time.Second)
+		tm, _ := time.Parse("2006-01-02 15:04:05", "2015-06-26 19:22:15")
+		urls := db.QueryUrls("SELECT * FROM urls WHERE company_id = " + strconv.Itoa(*company) + " ORDER BY hits DESC LIMIT 10")
 		for _, u := range urls {
 			data.PopUrl = append(data.PopUrl, u.Url)
 		}
@@ -191,7 +209,7 @@ func main() {
 		list.Items = data.PopUrl
 		bc.Data = data.Status
 		bc2.Data = data.Cont
-		ui.Render(p, list, g2, bc, bc2)
+		ui.Render(p, par2, list, g2, bc, bc2)
 
 	}
 
