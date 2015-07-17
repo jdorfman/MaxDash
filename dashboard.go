@@ -44,7 +44,8 @@ func main() {
 	lc0 := ui.NewLineChart()
 	lc0.Border.Label = " Bytes Per Second "
 	lc0.Data = []float64{}
-	lc0.Width = 25
+	lc0.Mode = "dot"
+	lc0.Width = 33
 	lc0.Height = 10
 	lc0.X = 0
 	lc0.Y = 4
@@ -66,11 +67,11 @@ func main() {
 
 	bc := ui.NewBarChart()
 	//bcdata := []int{3, 2, 5, 3, 9, 5, 3, 2, 5, 8, 3, 2, 4, 5, 3, 2, 5, 7, 5, 3, 2, 6, 7, 4, 6, 3, 6, 7, 8, 3, 6, 4, 5, 3, 2, 4, 6, 4, 8, 5, 9, 4, 3, 6, 5, 3, 6}
-	bclabels := []string{"200", "206", "304", "403", "400", "500", "499"}
+	bclabels := []string{"2xx", "3xx", "4xx", "5xx"}
 	bc.Border.Label = " Status Codes "
-	bc.Width = 26
+	bc.Width = 18
 	bc.Height = 10
-	bc.X = 26
+	bc.X = 34
 	bc.Y = 4
 	bc.DataLabels = bclabels
 	bc.BarColor = ui.ColorGreen
@@ -147,13 +148,10 @@ func main() {
 		data.Time = tm.Format("2006-01-02 15:04:05")
 		var cacheHits int
 		var bytes int64
-		var h200 int
-		var h206 int
-		var h304 int
-		var h403 int
-		var h400 int
-		var h500 int
-		var h499 int
+		var h2xx int
+		var h3xx int
+		var h4xx int
+		var h5xx int
 
 		var na int
 		var eu int
@@ -166,20 +164,14 @@ func main() {
 			if l.Es == "HIT" {
 				cacheHits++
 			}
-			if l.Ss == 200 {
-				h200++
-			} else if l.Ss == 206 {
-				h206++
-			} else if l.Ss == 304 {
-				h304++
-			} else if l.Ss == 403 {
-				h403++
-			} else if l.Ss == 400{
-				h400++
-			} else if l.Ss == 500 {
-				h500++
-			} else if l.Ss == 499 {
-				h499++
+			if l.Ss >= 200 && l.Ss < 300 {
+				h2xx++
+			} else if l.Ss >= 300 && l.Ss < 400 {
+				h3xx++
+			} else if l.Ss >= 400 && l.Ss < 500 {
+				h4xx++
+			} else if l.Ss >= 500 && l.Ss < 600 {
+				h5xx++
 			}
 
 			if l.Co == "NA" {
@@ -195,20 +187,17 @@ func main() {
 			}
 		}
 		lc0.Data = append(lc0.Data, float64(bytes))
-		if len(lc0.Data) > 26 {
+		if len(lc0.Data) > 22 {
 			lc0.Data = lc0.Data[1:]
 		}
 		data.CachePerc = float64(cacheHits)/float64(len(rawlogs))
 		data.CacheHits = append(data.CacheHits,cacheHits)
 
 		data.Status = make([]int, 0)
-		data.Status = append(data.Status, h200)
-		data.Status = append(data.Status, h206)
-		data.Status = append(data.Status, h304)
-		data.Status = append(data.Status, h400)
-		data.Status = append(data.Status, h403)
-		data.Status = append(data.Status, h500)
-		data.Status = append(data.Status, h499)
+		data.Status = append(data.Status, h2xx)
+		data.Status = append(data.Status, h3xx)
+		data.Status = append(data.Status, h4xx)
+		data.Status = append(data.Status, h5xx)
 
 		data.Cont = make([]int, 0)
 		data.Cont = append(data.Cont, na)
