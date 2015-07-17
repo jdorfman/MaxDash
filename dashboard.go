@@ -8,7 +8,6 @@ import (
 	"flag"
 	"time"
 	"strconv"
-	"math"
 )
 
 var (
@@ -30,16 +29,6 @@ func main() {
 	}
 	defer ui.Close()
 
-// Fake Line Chart Data
-
-sinps := (func() []float64 {
-	n := 220
-	ps := make([]float64, n)
-	for i := range ps {
-		ps[i] = 1 + math.Sin(float64(i)/5)
-	}
-	return ps
-})()
 
 // Start Dashboard
 
@@ -54,7 +43,7 @@ sinps := (func() []float64 {
 
 	lc0 := ui.NewLineChart()
 	lc0.Border.Label = " Hits Per Second "
-	lc0.Data = sinps
+	lc0.Data = []float64{}
 	lc0.Width = 25
 	lc0.Height = 10
 	lc0.X = 0
@@ -205,7 +194,10 @@ sinps := (func() []float64 {
 				oc++
 			}
 		}
-		data.Bytes = bytes
+		lc0.Data = append(lc0.Data, float64(bytes))
+		if len(lc0.Data) > 26 {
+			lc0.Data = lc0.Data[1:]
+		}
 		data.CachePerc = append(data.CachePerc,float64(cacheHits)/float64(len(rawlogs)))
 		data.CacheHits = append(data.CacheHits,cacheHits)
 
