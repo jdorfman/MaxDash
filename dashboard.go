@@ -92,18 +92,18 @@ func main() {
 // Draw Funtion
 
 	data := &struct{
-		Hits []int
-		Bytes []int64
-		Time []string
+		Hits int
+		Bytes int64
+		Time string
 		CacheHits []int
 		CachePerc []float64
 		Status []int
 		Cont []int
 		PopUrl []string
 	} {
-		make([]int, 0),
-		make([]int64, 0),
-		make([]string, 0),
+		0,
+		int64(0),
+		"",
 		make([]int, 0),
 		make([]float64, 0),
 		make([]int, 0),
@@ -112,13 +112,26 @@ func main() {
 	}
 	draw := func(t int) {
 		tm := time.Now().UTC().Add(-10*time.Second)
-		urls := db.QueryUrls("SELECT * FROM urls WHERE company_id = " + strconv.Itoa(*company) + " AND time_window = '" + tm.Truncate(24*time.Hour).Format("2006-01-02 15:04:05") + "' ORDER BY hits DESC LIMIT 10")
-		for _, u := range urls {
-			data.PopUrl = append(data.PopUrl, u.Url)
+		resp, err := db.QueryAll("SELECT count(*) as hits, sc, hn, ui FROM rawlogs WHERE ci = " + strconv.Itoa(*company) + " AND ti = '" + tm.Format("2006-01-02 15:04:05") + "' GROUP BY hn, sc, ui ORDER BY hits DESC LIMIT 10")
+		if err == nil {
+			data.PopUrl = make([]string, 0)
+			url := struct{
+				Hits 	int
+				Sc 		string
+				Hn 		string
+				Ui 		string
+			} {}
+			for resp.Table(0).HasNext() {
+				resp.Table(0).Next(&url)
+				data.PopUrl = append(data.PopUrl, url.Sc + "://" + url.Hn + url.Ui)
+			}
+		} else {
+			log.Println(err)
 		}
+
 		rawlogs := db.QueryRawLogs("SELECT * FROM rawlogs WHERE ci = " + strconv.Itoa(*company) + " AND ti = '" + tm.Format("2006-01-02 15:04:05") + "'")
-		data.Hits = append(data.Hits, len(rawlogs))
-		data.Time = append(data.Time, tm.Format("2006-01-02 15:04:05"))
+		data.Hits = len(rawlogs)
+		data.Time = tm.Format("2006-01-02 15:04:05")
 		var cacheHits int
 		var bytes int64
 		var h200 int
@@ -134,7 +147,6 @@ func main() {
 		var as int
 		var oc int
 		var sa int
-
 
 		for _, l := range rawlogs {
 			bytes += l.By_tr
@@ -169,9 +181,11 @@ func main() {
 				oc++
 			}
 		}
+		data.Bytes = bytes
 		data.CachePerc = append(data.CachePerc,float64(cacheHits)/float64(len(rawlogs)))
 		data.CacheHits = append(data.CacheHits,cacheHits)
-		data.Bytes = append(data.Bytes, bytes)
+
+		data.Status = make([]int, 0)
 		data.Status = append(data.Status, h200)
 		data.Status = append(data.Status, h206)
 		data.Status = append(data.Status, h304)
@@ -180,6 +194,7 @@ func main() {
 		data.Status = append(data.Status, h500)
 		data.Status = append(data.Status, h499)
 
+		data.Cont = make([]int, 0)
 		data.Cont = append(data.Cont, na)
 		data.Cont = append(data.Cont, eu)
 		data.Cont = append(data.Cont, as)
@@ -197,6 +212,7 @@ func main() {
 
 	evt := ui.EventCh()
 
+	tick := time.Tick(1 * time.Second)
 	i := 0
 	for {
 		select {
@@ -204,13 +220,9 @@ func main() {
 			if e.Type == ui.EventKey && e.Ch == 'q' {
 				return
 			}
-		default:
+		case <- tick:
 			draw(i)
 			i++
-			if i == 102 {
-				return
-			}
-			time.Sleep(time.Second / 2)
 		}
 	}
 }
