@@ -8,6 +8,7 @@ import (
 	"flag"
 	"time"
 	"strconv"
+	"math"
 )
 
 var (
@@ -20,7 +21,7 @@ func main() {
 	config, err := getConfig(*confFile)
 	if err != nil {
 		log.Fatal(err)
-	}	
+	}
 	db := volt.Connect(config.DbAddr)
 
 	err = ui.Init()
@@ -28,6 +29,17 @@ func main() {
 		panic(err)
 	}
 	defer ui.Close()
+
+// Fake Line Chart Data
+
+sinps := (func() []float64 {
+	n := 220
+	ps := make([]float64, n)
+	for i := range ps {
+		ps[i] = 1 + math.Sin(float64(i)/5)
+	}
+	return ps
+})()
 
 // Start Dashboard
 
@@ -37,6 +49,18 @@ func main() {
 	p.TextFgColor = ui.ColorWhite
 	p.Border.Label = ""
 	p.Border.FgColor = ui.ColorYellow
+
+// Line Chart
+
+	lc0 := ui.NewLineChart()
+	lc0.Border.Label = " Hits Per Second "
+	lc0.Data = sinps
+	lc0.Width = 25
+	lc0.Height = 10
+	lc0.X = 0
+	lc0.Y = 4
+	lc0.AxesColor = ui.ColorWhite
+	lc0.LineColor = ui.ColorGreen | ui.AttrBold
 
 // Popular Files List Chart
 
@@ -136,9 +160,9 @@ func main() {
 		var bytes int64
 		var h200 int
 		var h206 int
-		var h304 int 
-		var h403 int 
-		var h400 int 
+		var h304 int
+		var h403 int
+		var h400 int
 		var h500 int
 		var h499 int
 
@@ -201,12 +225,12 @@ func main() {
 		data.Cont = append(data.Cont, oc)
 		data.Cont = append(data.Cont, sa)
 
-	
+
 		g2.Percent = int(data.CachePerc[t] * float64(100))
 		list.Items = data.PopUrl
 		bc.Data = data.Status
 		bc2.Data = data.Cont
-		ui.Render(p, list, g2, bc, bc2)
+		ui.Render(p, list, g2, bc, bc2, lc0)
 
 	}
 
