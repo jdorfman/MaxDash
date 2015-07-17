@@ -42,7 +42,7 @@ func main() {
 // Line Chart
 
 	lc0 := ui.NewLineChart()
-	lc0.Border.Label = " Hits Per Second "
+	lc0.Border.Label = " Bytes Per Second "
 	lc0.Data = []float64{}
 	lc0.Width = 25
 	lc0.Height = 10
@@ -109,7 +109,7 @@ func main() {
 		Bytes int64
 		Time string
 		CacheHits []int
-		CachePerc []float64
+		CachePerc float64
 		Status []int
 		Cont []int
 		PopUrl []string
@@ -118,12 +118,12 @@ func main() {
 		int64(0),
 		"",
 		make([]int, 0),
-		make([]float64, 0),
+		float64(0),
 		make([]int, 0),
 		make([]int, 0),
 		make([]string, 0),
 	}
-	draw := func(t int) {
+	draw := func() {
 		tm := time.Now().UTC().Add(-10*time.Second)
 		resp, err := db.QueryAll("SELECT count(*) as hits, sc, hn, ui FROM rawlogs WHERE ci = " + strconv.Itoa(*company) + " AND ti = '" + tm.Format("2006-01-02 15:04:05") + "' GROUP BY hn, sc, ui ORDER BY hits DESC LIMIT 10")
 		if err == nil {
@@ -198,7 +198,7 @@ func main() {
 		if len(lc0.Data) > 26 {
 			lc0.Data = lc0.Data[1:]
 		}
-		data.CachePerc = append(data.CachePerc,float64(cacheHits)/float64(len(rawlogs)))
+		data.CachePerc = float64(cacheHits)/float64(len(rawlogs))
 		data.CacheHits = append(data.CacheHits,cacheHits)
 
 		data.Status = make([]int, 0)
@@ -218,18 +218,16 @@ func main() {
 		data.Cont = append(data.Cont, sa)
 
 
-		g2.Percent = int(data.CachePerc[t] * float64(100))
+		g2.Percent = int(data.CachePerc * float64(100))
 		list.Items = data.PopUrl
 		bc.Data = data.Status
 		bc2.Data = data.Cont
 		ui.Render(p, list, g2, bc, bc2, lc0)
-
 	}
 
 	evt := ui.EventCh()
 
 	tick := time.Tick(1 * time.Second)
-	i := 0
 	for {
 		select {
 		case e := <-evt:
@@ -237,8 +235,7 @@ func main() {
 				return
 			}
 		case <- tick:
-			draw(i)
-			i++
+			draw()
 		}
 	}
 }
